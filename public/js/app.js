@@ -18,13 +18,14 @@ export default class TagBrowserWidget {
   fetchData() {
     return new Promise((resolve, reject) => {
       //ajax the data and resolve the promise when it comes back
-      $.get('/js/data.json', resolve);
+      //get photos
+      $.get('https://api.unsplash.com/search/photos?query=minimalist&client_id=ab7a3fe95397f9c4435bc0b6bf1d6e8ebd0b1b11e5ea9c09d10cf5c85e3be0a0', resolve);
     });
   }
 
   setData(data) {
     //all cureent data in provided JSON
-    this.data = data;
+    this.data = data.results;
     console.log('Data fetched', this.data);
   }
 
@@ -34,19 +35,28 @@ export default class TagBrowserWidget {
 
     this.clearSelectedEntries();
 
+    //console.log("category passed in:", category);
+
     this.data.forEach(function(element){ 
       var currentElem = element;
 
-      var found = currentElem.tags.find(function(element) {
-        var el = element.toLowerCase();
-        return el == category;
+      //console.log("photo tags", currentElem.photo_tags);
+      var found = currentElem.photo_tags.find(function(element) {
+        var el = element.title.toLowerCase();
+
+        if(category) {
+          //console.log(category);
+          return el == category;
+        }
       });
 
       //add entry if a match is found
       if (found) {
+        console.log("was found");
         entriesByCategory.push(element);
       }
     });
+    console.log(entriesByCategory);
     this.currentEntries = entriesByCategory;
     this.renderEntryByCategory();
   }
@@ -54,13 +64,13 @@ export default class TagBrowserWidget {
   getSelectedEntry(entry) {
     var entryID = entry;
 
-    var thumbnail = document.getElementById("thumbnail");
-    var description = document.getElementById("description");
-    var type = document.getElementById("type");
-    var rating = document.getElementById("rating");
-    var nativeLanguageTitle = document.getElementById("native-language-title");
-    var episodes = document.getElementById("episodes");
-    var country = document.getElementById("country");
+    let thumbnail = document.getElementById("thumbnail");
+    let description = document.getElementById("description");
+    let userName = document.getElementById("user-name");
+    let userProfileUrl = document.getElementById("user-profile-url");
+    let userLikes = document.getElementById("user-likes");
+    let imgWidth = document.getElementById("img-width");
+    let imgHeight = document.getElementById("img-height");
 
     this.clearSelectedEntry();
 
@@ -68,13 +78,13 @@ export default class TagBrowserWidget {
       return element.id == entryID;
     });
 
-    thumbnail.src = selectedEntry.thumbnail;
-    description.innerHTML = selectedEntry.description;
-    type.innerHTML = selectedEntry.type;
-    rating.innerHTML = selectedEntry.rating;
-    nativeLanguageTitle.innerHTML = selectedEntry.nativeLanguageTitle;
-    episodes.innerHTML = selectedEntry.episodes;
-    country.innerHTML = selectedEntry.sourceCountry;
+    thumbnail.src = selectedEntry.urls.thumb;
+    description.innerHTML = selectedEntry.description;    
+    userName.innerHTML = selectedEntry.user.name;
+    userProfileUrl.innerHTML = selectedEntry.user.portfolio_url;
+    userLikes.innerHTML = selectedEntry.likes;
+    imgWidth.innerHTML = selectedEntry.width;
+    imgHeight.innerHTML = selectedEntry.height;
 
     this.selectedEntry = selectedEntry;
     console.log(this.selectedEntry);
@@ -86,7 +96,9 @@ export default class TagBrowserWidget {
     var ul = this.selectedTagList;
 
     for(var i =0; i<this.currentEntries.length; i++) {
-        var entryTitle = this.currentEntries[i].title;
+        var entryTitle = this.currentEntries[i].description;
+
+
         var entryID = this.currentEntries[i].id;
         //create span node to live within LI
         var entryContent = document.createElement('span');
@@ -116,21 +128,27 @@ export default class TagBrowserWidget {
 
     var data = this.data;
 
+
     //parse out all tags
     var uniqueTags = data.reduce(function(prev, curr) {
-      return [...prev, ...curr.tags];
+      console.log("prev vs curr", prev, curr);
+        return [...prev, ...curr.photo_tags];
     }, ''); 
 
+    console.log("unique tags:", uniqueTags);
     //remove duplicates
     var dedupedTags = uniqueTags.filter(function(item, pos, self) {
+      //console.log("item vs pos", item, pos);
       return self.indexOf(item) == pos;
     });
 
     //covert all entries to lower case    
-    dedupedTags = dedupedTags.map(function(x){ return x.toLowerCase() });
+    dedupedTags = dedupedTags.map(function(x){ console.log("while deduping:",x.title); return x.title.toLowerCase() });
 
     //return sorted array
     this.sortedTags = dedupedTags.sort();
+
+    console.log("sorted", this.sortedTags);
 
   }
 
@@ -155,6 +173,7 @@ export default class TagBrowserWidget {
         //create span node to live within LI
         var categoryContent = document.createElement('span');
         //adding data attr
+        //console.log("data-cat gonna get set to this:", this.sortedTags[i]);
         categoryContent.setAttribute('data-category', this.sortedTags[i]);
 
         //add class name
@@ -196,21 +215,21 @@ export default class TagBrowserWidget {
   }
 
   clearSelectedEntry() {
-    var thumbnail = document.getElementById("thumbnail");
-    var description = document.getElementById("description");
-    var type = document.getElementById("type");
-    var rating = document.getElementById("rating");
-    var nativeLanguageTitle = document.getElementById("native-language-title");
-    var episodes = document.getElementById("episodes");
-    var country = document.getElementById("country");
+    let thumbnail = document.getElementById("thumbnail");
+    let description = document.getElementById("description");
+    let userName = document.getElementById("user-name");
+    let userProfileUrl = document.getElementById("user-profile-url");
+    let userLikes = document.getElementById("user-likes");
+    let imgWidth = document.getElementById("img-width");
+    let imgHeight = document.getElementById("img-height");
 
-    thumbnail.src = '';
-    description.innerHTML = '';
-    type.innerHTML = '';
-    rating.innerHTML = '';
-    nativeLanguageTitle.innerHTML = '';
-    episodes.innerHTML = '';
-    country.innerHTML = '';
+    thumbnail.src = ''
+    description.innerHTML = '';    
+    userName.innerHTML = '';
+    userProfileUrl.innerHTML = '';
+    userLikes.innerHTML = '';
+    imgWidth.innerHTML = '';
+    imgHeight.innerHTML = '';
   }
 
   tagListClicked(event) {
