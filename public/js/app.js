@@ -148,8 +148,6 @@ export default class TagBrowserWidget {
     //return sorted array
     this.sortedTags = dedupedTags.sort();
 
-    console.log("sorted", this.sortedTags);
-
   }
 
   getElements() {
